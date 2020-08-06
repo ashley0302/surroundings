@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>Document</title>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Noto Sans KR', sans-serif;
+        display: flex;
+        flex-direction: column;
+        margin-top: 30px;
+    }
+
+    .main {
+        display: flex;
+        width: 300px;
+        margin: auto;
+        flex-direction: column;
+    }
+
+    #startBtn {
+        border-radius: 0.2rem;
+        font-size: 15px;
+        font-weight: 700;
+        padding: 10px;
+        color: #ffffff;
+        border-style: none;
+        background: #e74c3c;
+        cursor: pointer;
+        outline: none;
+    }
+
+    #showMarker {
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+
+    #showMarker input[type="radio"] {
+        opacity: 0;
+        width: 0;
+    }
+
+    #showMarker label {
+        cursor: pointer;
+        display: inline-block;
+        background-color: #ddd;
+        padding: 10px 12px;
+        font-size: 15px;
+        border-radius: 4px;
+
+    }
+
+    #showMarker input[type="radio"]:checked+label {
+        background-color: #bfb;
+        border-color: #4c4;
+    }
+
+    #createBtn {
+        border-radius: 0.2rem;
+        font-size: 15px;
+        font-weight: 700;
+        padding: 10px;
+        color: #ffffff;
+        border-style: none;
+        background: #34495e;
+        outline: none;
+        margin-bottom: 5px;
+        cursor: pointer;
+    }
+
+    #map {
+        border-radius: 0.2rem;
+    }
+
+    #submitBtn {
+
+        padding: 2px 3px;
+        font-size: 22px;
+        outline: none;
+        cursor: pointer;
+        background: none;
+        font-weight: 700;
+        border: none;
+        border-radius: 4px;
+    }
+
+    #modal {
+        display: none;
+        position: absolute;
+        z-index: 1;
+        left: auto;
+        top: 10%;
+        width: 220px;
+        padding: 10px;
+        background: #ecf0f1;
+        border-style: none;
+        border-radius: 4px;
+        flex-direction: column;
+        margin: auto;
+    }
+
+    #modalContent {
+        display: flex;
+        width: 200px;
+        padding: 10px;
+        background: #ffffff;
+        border-radius: 4px;
+    }
+
+    #contentBox {
+        width: 200px;
+        display: flex;
+        flex-direction: column;
+        margin: auto;
+    }
+
+    #modalTitle {
+        padding: 5px;
+        margin-bottom: 5px;
+        font-weight: 700;
+        width: 200px;
+    }
+
+    #closeBtn {
+        border-style: none;
+        float: right;
+        outline: none;
+        padding: 5px;
+        cursor: pointer;
+        font-weight: 700;
+    }
+</style>
+
+<body>
+    <div id="modal">
+        <button id="closeBtn" onclick="closeModal()">X</button>
+        <div id="contentBox">
+            <span id="modalTitle"></span>
+            <p id="modalContent"></p>
+        </div>
+    </div>
+    <div class="main">
+        <button id="startBtn" onclick="start()">출발</button>
+        <form id="showMarker"">
+                <label class=" container">재밌음
+            <input id="tag" type="radio" checked="checked" name="radio" value="A">
+            <span class="checkmark"></span>
+            </label>
+            <label class="container">맛있음
+                <input id="tag" type="radio" name="radio" value="B">
+                <span class="checkmark"></span>
+            </label>
+            <label class="container">슬픔
+                <input id="tag" type="radio" name="radio" value="C">
+                <span class="checkmark"></span>
+            </label>
+            <label class="container">대박
+                <input id="tag" type="radio" name="radio" value="C">
+                <span class="checkmark"></span>
+            </label>
+            <button id="submitBtn" type="submit">🚩</button>
+        </form>
+        <button id="createBtn" onclick="location.href='/create'">지금 위치 등록하기</button>
+        <div id="map" style="width:300px;height:400px;"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=81eeca6efd86d5ffae358a1e854101a2">
+    </script>
+    <script>
+        //MODAL
+        const modal = document.getElementById('modal');
+        const main = document.getElementsByClassName('main');
+
+        function closeModal() {
+            modal.style.display = "none";
+            $('.main').css('opacity', '1');
+        }
+        //kakao map api
+
+        const mapContainer = document.getElementById("map");
+        const mapOption = {
+            center: new kakao.maps.LatLng(33.450701, 126.570667),
+            level: 3
+        };
+        const map = new kakao.maps.Map(mapContainer, mapOption);
+
+
+        function displayMarker(locPosition, message) {
+
+            const imageSrc =
+                'https://upload.wikimedia.org/wikipedia/commons/a/a8/Ski_trail_rating_symbol_black_circle.png',
+                imageSize = new kakao.maps.Size(20, 20),
+                imageOption = {
+                    offset: new kakao.maps.Point(27, 69)
+                };
+
+            const markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+
+            //const imageSrc = ;
+            const marker = new kakao.maps.Marker({
+                map: map,
+                position: locPosition,
+                image: markerImage
+            });
+
+
+            map.setCenter(locPosition);
+        }
+
+
+        function displayMarkerDetail(lat, lng, title) {
+
+
+            const position = new kakao.maps.LatLng(lat, lng);
+            const marker = new kakao.maps.Marker({
+                map: map,
+                position: position,
+            });
+
+            const iwContent = title,
+                iwRemoveable = true;
+
+            const infowindow = new kakao.maps.InfoWindow({
+                content: iwContent,
+                removable: iwRemoveable
+            });
+
+            infowindow.open(map, marker);
+            kakao.maps.event.addListener(marker, 'click', function () {
+                const unique = marker.getPosition();
+                $.ajax({
+                    url: "/api/marker/detail",
+                    type: "POST",
+                    data: {
+                        lat: unique.Ha,
+                        lng: unique.Ga,
+                    }
+                }).then(data => {
+
+                    //console.log(data);
+                    $('#modalTitle').html(data.title);
+                    $('#modalContent').html(data.text);
+                    modal.style.display = "block";
+                    $('.main').css('opacity', '0.3');
+                    // alert(data.text);
+                })
+                marker.setMap(null);
+            });
+
+        }
+
+        //socket
+        const socket = io();
+        $(() => {
+            socket.on("userlocation", position => {
+                const lat = position.latitude, //위도
+                    lon = position.longitude; //경도
+                const locPosition = new kakao.maps.LatLng(lat, lon),
+                    message = ' <div style="padding:5px;">너 여기</div>';
+
+                displayMarker(locPosition, message);
+            });
+        });
+
+
+        function start() {
+
+            nav = navigator.geolocation.watchPosition(success, error);
+
+
+        }
+
+        function success(position) {
+            socket.emit("userlocation", {
+                longitude: position.coords.longitude,
+                latitude: position.coords.latitude
+            });
+        }
+
+        function error(error) {
+            console.log("eror");
+        }
+
+        $('#showMarker').submit(event => {
+            event.preventDefault();
+
+            const tag = $('#tag:checked').val();
+            $.ajax({
+                url: "/api/marker/list",
+                type: "POST",
+                data: {
+                    tag
+                }
+            }).then(data => {
+                for (const marker of data) {
+
+                    displayMarkerDetail(marker.lat, marker.lng, marker.title);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

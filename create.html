@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<style>
+    * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin-top:30px;
+            font-family: 'Noto Sans KR', sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+    .main {
+        display: flex;
+        margin:auto;
+        flex-direction: column;
+        width:300px;
+    }
+    #map{
+        border-radius:0.4rem;
+    }
+    #createMarker {
+        display: flex;
+        flex-direction: column;
+    }
+    #submitBtn{
+        background-color: #95a5a6;
+        padding: 11px ;
+        font-size: 15px;
+        font-weight:700;
+        color:#ffffff;
+        border:none;
+        border-radius: 4px;
+    }
+        #title{
+            border-radius: 4px;
+            border-style:none;
+            background:#ecf0f1;
+            padding:10px;
+            font-size:15px;
+            margin-top:5px;
+            margin-bottom:3px;
+            outline:none;
+        }
+        #text{
+            border-radius: 4px;
+            border-style:none;
+            background:#ecf0f1;
+            padding:10px;
+            font-size:15px;
+            margin-bottom:5px;
+            outline:none;
+        }
+        #createMarker input[type="radio"]{
+            opacity:0;
+            width:0;
+        }
+        #createMarker label{
+        display: inline-block;
+        background-color: #ddd;
+        padding: 10px 17px;
+        font-size: 15px;
+        margin-bottom:3px;
+        border-radius: 4px;
+        }
+        #createMarker input[type="radio"]:checked + label {
+        background-color:#bfb;
+        border-color: #4c4;
+        }
+</style>
+
+<body>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=81eeca6efd86d5ffae358a1e854101a2">
+    </script>
+    <div class="main">
+        <div id="map" style="width:300px;height:200px;"></div>
+        <div class="userbox">
+            <form id="createMarker">
+                <input id="title"  autocomplete="off"></input>
+                <input id="text" style="width:300px; height:200px;" autocomplete="off">
+                <div class="tagbox">
+                    <label class="container">재밌음
+                        <input id="tag" type="radio" checked="checked" name="radio" value="A">
+                        <span class="checkmark"></span>
+                    </label>
+                    <label class="container">맛있음
+                        <input id="tag" type="radio" name="radio" value="B">
+                        <span class="checkmark"></span>
+                    </label>
+                    <label class="container">슬픔
+                        <input id="tag" type="radio" name="radio" value="C">
+                        <span class="checkmark"></span>
+                    </label>
+                    <label class="container">대박
+                            <input id="tag" type="radio" name="radio" value="C">
+                            <span class="checkmark"></span>
+                        </label>
+                </div>
+                <button id="submitBtn"type="submit">등록</button>
+
+            </form>
+        </div>
+
+    </div>
+
+
+    <script>
+        const lastPosition = {
+            latitude: 33.450701,
+            longitude: 126.570667,
+        };
+        const mapContainer = document.getElementById("map");
+        const mapOption = {
+            center: new kakao.maps.LatLng(33.450701, 126.570667),
+            level: 3
+        };
+        const map = new kakao.maps.Map(mapContainer, mapOption);
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                const lat = position.coords.latitude, //위도
+                    lon = position.coords.longitude; //경도
+                const locPosition = new kakao.maps.LatLng(lat, lon),
+                    message = ' <div style="padding:7px; font-size:13px;">여기가 아니면 옮겨요!</div>'
+
+                displayMarker(locPosition, message);
+            });
+        } else {
+            const locPosition = new kakao.maps.LatLng(33.450701, 126.570667),
+                message = "geolocation을 사용할 없어요"
+
+            displayMarker(locPosition, message);
+        }
+
+        function displayMarker(locPosition, message) {
+            const marker = new kakao.maps.Marker({
+                map: map,
+                position: locPosition
+            });
+
+            const iwContent = message,
+                iwRemoveable = true;
+
+            const infowindow = new kakao.maps.InfoWindow({
+                content: iwContent,
+                removable: iwRemoveable
+            });
+
+            infowindow.open(map, marker);
+
+            map.setCenter(locPosition);
+            marker.setDraggable(true);
+
+            kakao.maps.event.addListener(marker, 'dragend', function () {
+                lastPosition.latitude = marker.getPosition().Ha;
+                lastPosition.longitude = marker.getPosition().Ga;
+                //console.log(lastPosition)
+                //alert('드래그 끝!');
+            });
+        }
+
+
+        $('#createMarker').submit(event => {
+            event.preventDefault();
+            const text = $('#text').val();
+            const title = $('#title').val();
+            const tag = $('#tag:checked').val();
+            const lat = lastPosition.latitude;
+            const lng = lastPosition.longitude;
+
+            $.ajax({
+                url: "/api/marker",
+                type: "POST",
+                data: {
+                    title,
+                    text,
+                    tag,
+                    lat,
+                    lng
+                }
+            }).done(data => {
+                alert('글쓰기 완료!');
+            }).fail((request, status, error) => {
+                alert(request.responseText);
+            });
+
+        })
+
+
+    </script>
+</body>
+
+</html>
